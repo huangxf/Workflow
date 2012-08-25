@@ -118,22 +118,32 @@ public class WorkflowDAOImp implements WorkflowDAO{
 		return item;
 	 }
 	 
-	void writeLog(String niid,String operation,String operator,String note,DatabaseTools transUtil) throws Exception{
+	 /**
+	  * 将日志对象写入到数据库
+	  * @param wfLogList
+	  * @param transUtil
+	  * @throws Exception
+	  */
+	void writeLog(ArrayList<WfLog> wfLogList,DatabaseTools transUtil) throws Exception{
 		String wflid = new Long(new Date().getTime()).toString();
-		if(niid == null || operation == null)
+		if(wfLogList == null || wfLogList.size() == 0)
 			return;
+		Iterator it = wfLogList.iterator();
+		while(it.hasNext()){
+			WfLog log = (WfLog)it.next();
 		StringBuffer sql = new StringBuffer();
-		sql.append("INSERT INTO wf_log (wflid,niid,operation,operator,note,operatime,ifdel) VALUES('");
-		sql.append(wflid).append("','");
-		sql.append(niid).append("','");
-		sql.append(operation).append("','");
-		sql.append(operator).append("','");
-		sql.append(note).append("',");
+		sql.append("INSERT INTO wf_log (wflid,niid,operation,operator,note,operatetime,ifdel) VALUES('");
+		sql.append(log.getWflid()).append("','");
+		sql.append(log.getNiid()).append("','");
+		sql.append(log.getOperation()).append("','");
+		sql.append(log.getOperator()).append("','");
+		sql.append(log.getNote()).append("',");
 		sql.append("getDate()").append(",'");
 		sql.append("0").append("')");
 		
 		System.out.println("执行SQL:"+sql.toString());
 		transUtil.addSql(sql.toString());
+		}
 
 	
 	}
@@ -149,6 +159,9 @@ public class WorkflowDAOImp implements WorkflowDAO{
 			throw new Exception("该流程在当前操作期间状态发生了改变，请重新进行流程操作!");
 		}
 		
+		String currentTime = new Long(new Date().getTime()).toString();
+		engine.getWfInstance().setLastmodify(currentTime);
+		
 		//更新流程实例表
 		saveObj(engine.getWfInstance(),"WF_INSTANCE","wfiid",transUtil);
 		
@@ -161,12 +174,12 @@ public class WorkflowDAOImp implements WorkflowDAO{
 		}
 		
 		//写入工作流操作日志
-		//writeLog()
+		writeLog(engine.getWfLogList(),transUtil);
+
 		
 		try{
-			String currentTime = new Long(new Date().getTime()).toString();
-			engine.getWfInstance().setLastmodify(currentTime);
 			transUtil.excuteSql();
+			engine.getWfLogList().clear(); //存储后清空日志
 		}catch(Exception e){
 			engine.getWfInstance().setLastmodify(currentDBUpdateTime);
 			throw new Exception("在存储工作流实例(id:"+engine.getWfInstance().getWfiid()+")到数据库的过程中发生了问题:"+e.toString());
@@ -334,7 +347,13 @@ public class WorkflowDAOImp implements WorkflowDAO{
 
 		String isskippable = transUtil.getColumnValue("SELECT isskippable FROM WF_NODEINSTANCE WHERE niid= '" + pkvalue +"'");
 		item.setIsskippable(isskippable);
-
+		
+		String prvnode = transUtil.getColumnValue("SELECT prvnode FROM WF_NODEINSTANCE WHERE niid= '" + pkvalue +"'");
+		item.setPrvnode(prvnode);
+		
+		String nextnode = transUtil.getColumnValue("SELECT nextnode FROM WF_NODEINSTANCE WHERE niid= '" + pkvalue +"'");
+		item.setNextnode(nextnode);
+		
 		String nodetype = transUtil.getColumnValue("SELECT nodetype FROM WF_NODEINSTANCE WHERE niid= '" + pkvalue +"'");
 		item.setNodetype(nodetype);
 
@@ -364,8 +383,8 @@ public class WorkflowDAOImp implements WorkflowDAO{
 		String wflid = transUtil.getColumnValue("SELECT wflid FROM WF_LOG WHERE wflid= '" + pkvalue +"'");
 		item.setWflid(wflid);
 
-		String wfiid = transUtil.getColumnValue("SELECT wfiid FROM WF_LOG WHERE wflid= '" + pkvalue +"'");
-		item.setWfiid(wfiid);
+		String niid = transUtil.getColumnValue("SELECT niid FROM WF_LOG WHERE wflid= '" + pkvalue +"'");
+		item.setNiid(niid);
 
 		String operation = transUtil.getColumnValue("SELECT operation FROM WF_LOG WHERE wflid= '" + pkvalue +"'");
 		item.setOperation(operation);

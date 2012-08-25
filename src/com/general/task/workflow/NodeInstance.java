@@ -7,6 +7,8 @@ public class NodeInstance{
 	String actor =null;
 	String isactive =null;
 	String isskippable =null;
+	String prvnode = null;
+	String nextnode = null;
 	String nodetype =null;
 	String status =null;
 	String inputtime =null;
@@ -71,4 +73,17 @@ public class NodeInstance{
 	public void setModifytime(String Modifytime){
 		this.modifytime = Modifytime;
 	}
+	public String getPrvnode() {
+		return prvnode;
+	}
+	public void setPrvnode(String prvnode) {
+		this.prvnode = prvnode;
+	}
+	public String getNextnode() {
+		return nextnode;
+	}
+	public void setNextnode(String nextnode) {
+		this.nextnode = nextnode;
+	}
+	
 }

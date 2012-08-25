@@ -3,6 +3,8 @@ package com.general.task.workflow;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import com.general.reflection.ReflectionTools;
+
 public class WfTemplate{
 	String wftid =null;
 	String name =null;
@@ -75,7 +77,26 @@ public class WfTemplate{
 	}
 	
 	
-
+	public NodeTemplate findNodeByAttr(String attrName,String value) throws Exception{
+		NodeTemplate node = null;
+		int count = 0;
+		if(this.getNodeTemplateList() == null)
+			return node;
+		
+		Iterator<NodeTemplate> it = this.getNodeTemplateList().iterator();
+		while(it.hasNext()){
+			NodeTemplate temp = it.next();
+			if(ReflectionTools.getValue(temp, attrName) .equals(value) ){
+				count++;
+				node = temp;
+			}
+		}
+		
+		if(count > 1)
+			throw new Exception("该流程模板(id:"+this.getWftid()+")中包含多于1个的符合该id的节点！");
+		else
+			return node;
+	}
 	
 	
 }

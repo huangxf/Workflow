@@ -13,8 +13,11 @@ public class Test {
 		try{
 			//engine.createWorkflow("0x0001",new Long((new Date()).getTime()).toString());
 			WorkflowEngine.init(dao);
-			engine.load("0x0001","1345841204125");
-			engine.start();
+			engine.load("0x0001","1345912666671");
+			//engine.start();
+			//engine.save();
+			engine.forward();
+			//engine.backward();
 			engine.save();
 		}catch(Exception e){
 			System.out.println("Something is wrong:" + e.getMessage());

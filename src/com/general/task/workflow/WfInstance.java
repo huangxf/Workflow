@@ -105,7 +105,7 @@ public class WfInstance{
 		}
 		
 		if(count > 1)
-			throw new Exception("该流程模板(id:"+this.getWftid()+")中包含多于1个的符合该id的节点！");
+			throw new Exception("该流程实例(id:"+this.getWftid()+")中包含多于1个的符合该id的节点！");
 		else
 			return node;
 	}
