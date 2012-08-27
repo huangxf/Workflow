@@ -4,6 +4,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
+
 /**
  * 
  * 数据库工具类，用于提供在编程中可能用到的各种数据库方法。
@@ -17,6 +21,9 @@ public class DatabaseTools{
 	private Connection connection;
 	private Statement statement;
 	private ArrayList<String> sqlList;
+	private DataSource dataSource;
+	private Context context;
+	private String jndi;
 	
 	
 	
@@ -48,6 +55,21 @@ public class DatabaseTools{
         
         statement = connection.createStatement();
         sqlList = new ArrayList<String>();
+	}
+	
+	public DatabaseTools(String jndi){
+		try{
+			this.jndi = jndi;
+			this.context = new InitialContext();
+			this.dataSource = (DataSource)context.lookup(jndi);
+			this.connection = dataSource.getConnection();
+			this.statement = connection.createStatement();
+			System.out.println("由JNDI:"+this.jndi+"创建连接成功");
+		}catch(Exception e){
+			System.out.println("由JNDI:"+this.jndi+"创建连接失败:"+e.toString());
+			e.printStackTrace();
+		}
+		
 	}
 	
 	/**

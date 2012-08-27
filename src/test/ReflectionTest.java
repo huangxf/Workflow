@@ -12,8 +12,8 @@ public class ReflectionTest {
 	
 	public static void main(String[] args) throws Exception{
 		WorkflowDAOImp dao = new WorkflowDAOImp();
-		WorkflowEngine engine = WorkflowEngine.init(dao);
-		WorkflowEngine.init(dao);
+		WorkflowEngine engine = WorkflowEngine.init(dao,"0000000002");
+		WorkflowEngine.init(dao,"0000000002");
 		engine.load("0x0001","1345719266062");
 		WfTemplate template = engine.getWfTemplate();
 		

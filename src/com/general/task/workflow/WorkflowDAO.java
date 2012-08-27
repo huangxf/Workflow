@@ -7,7 +7,7 @@ public interface WorkflowDAO {
 	/***
 	 * 创建并启动工作流
 	 */
-	public void create(String wftid,String params) throws Exception;
+	public void create(String wftid,String params,String userid) throws Exception;
 	
 	
 	
@@ -46,5 +46,13 @@ public interface WorkflowDAO {
 	 * 从数据库中删除工作流
 	 */
 	public void delete() throws Exception;
+	
+	/**
+	 * 根据角色id取出相应的userid
+	 * @param nodeTemplate
+	 * @return
+	 * @throws Exception
+	 */
+	public String getNodeActors(String wftid,String actor) throws Exception;
 
 }

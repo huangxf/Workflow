@@ -1,7 +1,6 @@
-package com.general.task.workflow.dao;
+package com.general.task.workflow.web.dao;
 
 import java.lang.reflect.Method;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,17 +10,20 @@ import java.lang.reflect.*;
 
 import javax.sql.RowSet;
 
+import sun.jdbc.rowset.CachedRowSet;
+
+import com.databasetool.transsupport.DBTools;
 import com.general.reflection.ReflectionTools;
 import com.general.task.workflow.*;
-import com.huangxf.databasetools.DatabaseTools;
+
 
 public class WorkflowDAOImp implements WorkflowDAO{
 
 	@Override
 	public void create(String wftid,String params,String userid) throws Exception {
 		//DatabaseTools util = new DatabaseTools("localhost","1433","eamis","sa","123456");
-		DatabaseTools util = new DatabaseTools("java:/zhyeamDS");
-		//ResultSet rs = util.getResultBySelect("SELECT * FROM wf_template where wftid = '"+wftid+"'");
+		DBTools util = new DBTools("java:/zhyeamDS");
+		//CachedRowSet rs = util.getResultBySelect("SELECT * FROM wf_template where wftid = '"+wftid+"'");
 
 		//模板表中的各个字段
 		String actorfun = util.getColumnValue("SELECT actorfun FROM wf_template where wftid = '"+wftid+"'");
@@ -44,7 +46,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 		util.addSql(insSQL.toString());
 		
 		//通过模板节点创建实例节点
-		ResultSet rs = util.getResultBySelect("SELECT * FROM wf_nodetemplate where wftid = '"+wftid+"'");
+		CachedRowSet rs = util.getResultBySelect("SELECT * FROM wf_nodetemplate where wftid = '"+wftid+"'");
 		
 		while(rs!=null && rs.next()){
 			String niid = new Long(new Date().getTime()).toString();
@@ -71,7 +73,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 		 
 		
 		try{
-			util.excuteSql();
+			util.executeSql();
 		}catch(Exception e){
 			throw new Exception(e.toString());
 		}finally{
@@ -85,7 +87,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	
 	 public NodeTemplate loadNodeTemplate(String pkvalue) throws Exception{ 
 		 //TODO implment Dao code here.
-		 DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		 DBTools transUtil = new DBTools("java:/zhyeamDS");
 		NodeTemplate item =  new NodeTemplate();
 		try{
 			String nid = transUtil.getColumnValue("SELECT nid FROM WF_NODETEMPLATE WHERE nid= '" + pkvalue +"'");
@@ -127,7 +129,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	  * @param transUtil
 	  * @throws Exception
 	  */
-	void writeLog(ArrayList<WfLog> wfLogList,DatabaseTools transUtil) throws Exception{
+	void writeLog(ArrayList<WfLog> wfLogList,DBTools transUtil) throws Exception{
 		String wflid = new Long(new Date().getTime()).toString();
 		if(wfLogList == null || wfLogList.size() == 0)
 			return;
@@ -155,7 +157,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	public void save(WorkflowEngine engine) throws Exception{
 		if(engine==null)
 			return;
-		DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		DBTools transUtil = new DBTools("java:/zhyeamDS");
 		
 		String currentDBUpdateTime = transUtil.getColumnValue("SELECT lastmodify FROM wf_instance WHERE wfiid = '"+engine.getWfInstance().getWfiid()+"'");
 		if(!currentDBUpdateTime.equals(engine.getWfInstance().getLastmodify())){
@@ -181,7 +183,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 
 		
 		try{
-			transUtil.excuteSql();
+			transUtil.executeSql();
 			engine.getWfLogList().clear(); //存储后清空日志
 		}catch(Exception e){
 			engine.getWfInstance().setLastmodify(currentDBUpdateTime);
@@ -199,7 +201,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	 * @param util
 	 * @throws Exception
 	 */
-	void saveObj(Object obj,String tablename, String pkname,DatabaseTools util) throws Exception {
+	void saveObj(Object obj,String tablename, String pkname,DBTools util) throws Exception {
 		// TODO Auto-generated method stub
 		if(obj == null || tablename == null || util == null){
 			System.out.println("对象为空或表明为空或主属性为空或者数据工具对象为空.");
@@ -226,7 +228,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	@Override
 	public WfTemplate loadTemplate(String pkvalue) throws Exception {
 		// TODO Auto-generated method stub
-		DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		DBTools transUtil = new DBTools("java:/zhyeamDS");
 		WfTemplate item =  new WfTemplate();
 		try{
 		String wftid = transUtil.getColumnValue("SELECT wftid FROM WF_TEMPLATE WHERE wftid= '" + pkvalue +"'");
@@ -247,7 +249,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 		//初始化NodeTemplateList列表
 		item.setNodeTemplateList(new ArrayList<NodeTemplate>());
 		
-		ResultSet rs = transUtil.getResultBySelect("SELECT * FROM WF_NODETEMPLATE WHERE wftid = '" + wftid +"'");
+		CachedRowSet rs = transUtil.getResultBySelect("SELECT * FROM WF_NODETEMPLATE WHERE wftid = '" + wftid +"'");
 		while(rs!=null && rs.next()){
 			String nid = (String)rs.getString("nid");
 			NodeTemplate nodeTemplate = loadNodeTemplate(nid);
@@ -264,7 +266,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	}
 	
 	public WfInstance loadInstance(String wftid,String params) throws Exception{
-		DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		DBTools transUtil = new DBTools("java:/zhyeamDS");
 		WfInstance temp = null;
 		try{
 			String wfiid = transUtil.getColumnValue("SELECT wfiid FROM WF_INSTANCE WHERE wftid = '"+wftid+"' AND params = '"+params+"'");
@@ -280,7 +282,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	@Override
 	public WfInstance loadInstance(String pkvalue) throws Exception {
 		// TODO Auto-generated method stub
-		DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		DBTools transUtil = new DBTools("java:/zhyeamDS");
 		WfInstance item =  new WfInstance();
 		try{
 		String wfiid = transUtil.getColumnValue("SELECT wfiid FROM WF_INSTANCE WHERE wfIid= '" + pkvalue +"'");
@@ -310,7 +312,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 		//初始化NodeInstanceList列表
 		item.setNodeInstanceList(new ArrayList<NodeInstance>());
 		
-		ResultSet rs = transUtil.getResultBySelect("SELECT * FROM WF_NODEINSTANCE WHERE wfiid = '" + wfiid +"'");
+		CachedRowSet rs = transUtil.getResultBySelect("SELECT * FROM WF_NODEINSTANCE WHERE wfiid = '" + wfiid +"'");
 		while(rs!=null && rs.next()){
 			String niid = (String)rs.getString("niid");
 			NodeInstance nodeInstance = loadNodeInstance(niid);
@@ -330,7 +332,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	public NodeInstance loadNodeInstance(String pkvalue)
 			throws Exception {
 		// TODO Auto-generated method stub
-		DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		DBTools transUtil = new DBTools("java:/zhyeamDS");
 		NodeInstance item =  new NodeInstance();
 		try{
 		String niid = transUtil.getColumnValue("SELECT niid FROM WF_NODEINSTANCE WHERE niid= '" + pkvalue +"'");
@@ -380,7 +382,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 
 	 public WfLog loadWfLog(String pkvalue) throws Exception{ 
 		 //TODO implment Dao code here.
-		DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		DBTools transUtil = new DBTools("java:/zhyeamDS");
 		WfLog item =  new WfLog();
 		try{
 		String wflid = transUtil.getColumnValue("SELECT wflid FROM WF_LOG WHERE wflid= '" + pkvalue +"'");
@@ -421,7 +423,7 @@ public class WorkflowDAOImp implements WorkflowDAO{
 	
 	 @Override	 
 	 public String getNodeActors(String wftid,String actor) throws Exception {
-		 DatabaseTools transUtil = new DatabaseTools("localhost","1433","eamis","sa","123456");
+		 DBTools transUtil = new DBTools("java:/zhyeamDS");
 		 try{
 			 	String actorFun = transUtil.getColumnValue("SELECT actorFun FROM wf_template where wftid = '"+wftid+"'");
 			 	Class clazz = Class.forName(actorFun);

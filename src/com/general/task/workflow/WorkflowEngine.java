@@ -35,11 +35,18 @@ public class WorkflowEngine {
 	private ArrayList<WfLog> wfLogList;
 	
 	/**
+	 * 本次对工作流引擎进行操作的用户id
+	 */
+	private String userid;
+	
+	
+	/**
 	 * 工作流引擎的初始化函数，用于返回一个工作流引擎对象
 	 * @return WorkflowEngine
 	 */
-	public static WorkflowEngine init(WorkflowDAO wfDAO){
+	public static WorkflowEngine init(WorkflowDAO wfDAO,String userid){
 		WorkflowEngine workflowEngine = new WorkflowEngine();
+		workflowEngine.userid = userid;
 		workflowEngine.workflowDAO = wfDAO;
 		workflowEngine.wfTemplate = null;
 		workflowEngine.wfInstance = null;
@@ -75,7 +82,7 @@ public class WorkflowEngine {
 	 * @throws Exception 异常
 	 */
 	public void createWorkflow(String wftid,String params) throws Exception{
-		workflowDAO.create(wftid,params);
+		workflowDAO.create(wftid,params,userid);
 	}
 	
 	/**
@@ -94,6 +101,15 @@ public class WorkflowEngine {
 		if(firstNode.getIsactive().equals("1")){
 			throw new Exception("当前流程第一个节点已经启动,请不要重复启动流程!");
 		}
+		
+		if("NULL".equals(firstNode.getActor()) || "".equals(firstNode.getActor())){
+			throw new Exception("当前流程第一个节点没有对应的审批人!");
+		}
+		
+		if(!userid.equals(firstNode.getActor())){
+			throw new Exception("流程当前的操作人与当前节点的审批人不符!");
+		}
+		
 		//设定当前的第一个节点为"激活"状态
 		firstNode.setIsactive("1");
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -162,6 +178,9 @@ public class WorkflowEngine {
 		
 		if(currentNode == null)
 			throw new Exception("该流程中当前没有节点处于激活状态,流程状态异常,请检查流程实例数据.");
+		if(!userid.equals(currentNode.getActor())){
+			throw new Exception("流程当前的操作人与当前节点的审批人不符!");
+		}
 		
 		//从模板节点中找出active节点对应的下一个模板节点id
 		String insCurNid = currentNode.getNid();
@@ -212,6 +231,9 @@ public class WorkflowEngine {
 		
 		if(currentNode == null)
 			throw new Exception("该流程中当前没有节点处于激活状态,流程状态异常,请检查流程实例数据.");
+		if(!userid.equals(currentNode.getActor())){
+			throw new Exception("流程当前的操作人与当前节点的审批人不符!");
+		}
 		
 		NodeTemplate curTemplate = this.wfTemplate.findNodeByAttr("nid", currentNode.getNid());
 		String nodeType = curTemplate.getNodetype();
@@ -242,7 +264,49 @@ public class WorkflowEngine {
 	 */
 	public void backward(int step){}//向后驳回工作流节点
 	public void skip(){} //跳过当前节点
-	public void stop(){}//在当前节点结束工作流
+	
+	/**
+	 * 在当前节点结束工作流
+	 */
+	public void stop() throws Exception{
+		//判断流程实例是否未启动或者未开始，如果是就抛出异常
+		String status = this.getWfInstance().getStatus();
+		if("0".equals(status) || "2".equals(status) || "3".equals(status)){
+			if("0".equals(status))
+				throw new Exception("该流程节点还未启动");
+			if("2".equals(status))
+				throw new Exception("该流程节点已经被审批完成");
+			if("3".equals(status))
+				throw new Exception("该流程节点已经被驳回");
+		}
+		//寻找当前节点
+		//找出流程实例中active的节点
+		
+		NodeInstance currentNode = null;
+		currentNode = this.getWfInstance().findNodeByAttr("isactive", "1");
+		
+		if(currentNode == null)
+			throw new Exception("该流程中当前没有节点处于激活状态,流程状态异常,请检查流程实例数据.");
+		if(!userid.equals(currentNode.getActor())){
+			throw new Exception("流程当前的操作人与当前节点的审批人不符!");
+		}
+		
+		
+		//将当前节点的状态定义为"已审批",当前节点置为非激活
+		currentNode.setStatus("1");
+		currentNode.setIsactive("0");
+		
+		//将其他未审批节点标记为"可跳过"
+		for(NodeInstance node:this.wfInstance.getNodeInstanceList()){
+			if("0".equals(node.getStatus())){
+				node.setIsskippable("1");
+			}
+		}
+		
+		//设置工作流状态为已经审批结束
+		this.wfInstance.setStatus("2");
+		createLog(currentNode.getNiid(),"4","huangxf","当前节点结束");
+	}
 	public void destroy(){}
 
 
